@@ -1,26 +1,41 @@
 import React, { useEffect, useState, useReducer } from 'react';
 import {
-    SafeAreaView,
     StyleSheet,
-    ScrollView,
     View,
     Text,
-    StatusBar,
-    TextInput,
-    Button,
-    ImageBackground,
-    Alert,
     FlatList
 
 } from 'react-native';
 
 
 
-
+// @refresh reset
 import { TouchableHighlight } from 'react-native-gesture-handler';
 import database, { firebase } from '@react-native-firebase/database';
+import auth from '@react-native-firebase/auth';
 
 const devDB = firebase.app().database('http://localhost:9000/?ns=badmintonmatcher-4f217');
+
+function submit(selected_sports){
+    let currentUser = auth().currentUser;
+
+    console.log('submited sports',currentUser.uid);
+    let data ={}
+     Object.keys(selected_sports).forEach((v)=>{
+         let item = selected_sports[v]
+
+         data[v] = {sport:v,experience:item.level,mode:item.playStyle}
+
+
+    })
+
+    devDB.ref('/clients/' + currentUser.uid + '/player_sports/').set(data).then((result) => {
+    })
+
+
+
+
+}
 
 function reducer(state, action) {
 
@@ -29,22 +44,21 @@ function reducer(state, action) {
     switch (type) {
 
         case 'ADD_SPORT':
-            let old_list = {...state.selected_sports}
-
-            old_list[value.sport] = {...value}
-            console.log(old_list);
-            return { ...state, selected_sports:old_list }
+            console.log('adding sport');
+            let old_list = { ...state.selected_sports }
+            old_list[value.sport] = { ...value }
+            return { ...state, selected_sports: old_list }
         case 'REMOVE_SPORT':
+            let original_list = { ...state.selected_sports }
+            delete original_list[value.sport]
+            return { ...state, selected_sports: original_list }
 
-            return { ...state, email: value, error: '' }
-
-      
+        case 'SUBMIT':
+            submit(state.selected_sports)
+            return state;
 
 
     }
-
-
-
 
 
 }
@@ -62,6 +76,24 @@ const mock_sports = {
 
 
 
+function Footer(props) {
+    return (
+        <View style={{ flex: 1, marginTop: 40, justifyContent: 'center', alignItems: 'center', maxHeight: 100, minWidth: '100%' }}>
+
+            <TouchableHighlight
+                style={[styles.registerButton]}
+                onPress={() => { props.submit(); }}
+            >
+                <Text style={styles.registerLabel}>Register</Text>
+            </TouchableHighlight>
+
+
+        </View>
+
+    )
+}
+
+
 
 export default function SelectSports({ navigation }) {
     // We are just going to hardcode some sports for now, later on we will fetch from our db, once we find a easy way to seed it
@@ -71,19 +103,17 @@ export default function SelectSports({ navigation }) {
     const [sports, setSports] = useState();
     const [formInputs, dispatch] = useReducer(reducer,
         {
-
             selected_sports: {},
             error: null,
-
-
         }
-
-
     );
 
     // use this for now to seed sports table
     useEffect(() => {
         devDB.ref('/sports').set(mock_sports).then((result) => {
+            if(result){
+               
+            }
         })
 
 
@@ -118,8 +148,23 @@ export default function SelectSports({ navigation }) {
 
                 <FlatList
                     data={sports.sort((a, b) => { return a.name < b.key })}
-                    renderItem={(item) => { return (<SportPill item={item} addSport={(val)=>{dispatch({ type: 'ADD_SPORT', value:val })}} />) }}
+                    renderItem={(item) => {
+                        return (
+                            <SportPill
+                                item={item}
+                                removeSport={(val) => {
+                                    dispatch({ type: 'REMOVE_SPORT', value: val })
+                                }}
+                                addSport={
+                                    (val) => {
+                                        dispatch({ type: 'ADD_SPORT', value: val })
+
+                                    }
+                                }
+                            />)
+                    }}
                     keyExtractor={item => item.name}
+                    ListFooterComponent={<Footer submit={() => { dispatch({ type: 'SUBMIT', value: null }); navigation.navigate('Login') }} />}
                 />
 
 
@@ -142,10 +187,10 @@ function SportPill(props) {
         switch (type) {
 
             case 'SET_LEVEL':
-                props.addSport({ ...state, level: value })
+                props.addSport({ ...state, level: value });
                 return { ...state, level: value }
             case 'SET_STYLE':
-                props.addSport({ ...state, level: value })
+                props.addSport({ ...state, playStyle: value });
                 return { ...state, playStyle: value }
 
         }
@@ -154,7 +199,7 @@ function SportPill(props) {
     const [selected, setSelected] = useState(false);
     const [sportParams, dispatch] = useReducer(sportReducer,
         {
-            sport:props.item.item.name,
+            sport: props.item.item.name,
             level: 'Beginner',
             playStyle: 'Casual',
         }
@@ -162,48 +207,46 @@ function SportPill(props) {
 
 
     const toggleExpand = () => {
-
+        if (selected) {
+            console.log('removeSport');
+            props.removeSport(sportParams)
+        } else {
+            props.addSport(sportParams);
+        }
         setSelected(!selected);
 
     }
 
-    const updateSportLevel= (val) =>{
-        dispatch({ type: 'SET_LEVEL', value:val })
+    const updateSportLevel = (val) => {
+        dispatch({ type: 'SET_LEVEL', value: val })
 
     }
 
-    const updateSportStyle= (val) =>{
-        dispatch({ type: 'SET_STYLE', value:val })
- 
+    const updateSportStyle = (val) => {
+        dispatch({ type: 'SET_STYLE', value: val })
+
 
     }
 
-    
-
-
-    useEffect(()=>{
-
-
-    },sportParams)
     return (
         <View>
             <TouchableHighlight onPress={() => { toggleExpand(); }} style={{ flex: 1, margin: 10, marginBottom: 10, padding: 20, borderRadius: 15, maxHeight: 80, backgroundColor: 'white', flexDirection: 'row' }}>
 
-                <Text style={{ textTransform: 'capitalize' }}>{props.item.item.name}</Text>
+                <Text style={{ textTransform: 'capitalize', color: selected ? '#FF6B01' : '#282E3C' }}>{props.item.item.name}</Text>
             </TouchableHighlight>
             {selected ? <View style={{ flex: 1, marginRight: 10, marginLeft: 10, backgroundColor: 'white', minHeight: 250 }}>
                 <Text style={{ margin: 10 }}>Level:</Text>
                 <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-around', margin: 10 }}>
-                    <ButtonPill currentValue={sportParams.level} label={'Beginner'} dispatch={(val)=>updateSportLevel(val)}/>    
-                    <ButtonPill currentValue={sportParams.level} label={'Intermediate'} dispatch={(val)=>updateSportLevel(val)}/>
-                    <ButtonPill currentValue={sportParams.level} label={'Advanced'} dispatch={(val)=>updateSportLevel(val)}/>
+                    <ButtonPill currentValue={sportParams.level} label={'Beginner'} dispatch={(val) => updateSportLevel(val)} />
+                    <ButtonPill currentValue={sportParams.level} label={'Intermediate'} dispatch={(val) => updateSportLevel(val)} />
+                    <ButtonPill currentValue={sportParams.level} label={'Advanced'} dispatch={(val) => updateSportLevel(val)} />
                 </View>
 
                 <Text style={{ margin: 10 }}>Play style:</Text>
                 <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-around', margin: 10 }}>
-                    <ButtonPill  currentValue={sportParams.playStyle} label={'Casual'} dispatch={(val)=>updateSportStyle(val)}/>
-                    <ButtonPill  currentValue={sportParams.playStyle} label={'Competitive'} dispatch={(val)=>updateSportStyle(val)}/>
-                    <ButtonPill  currentValue={sportParams.playStyle} label={'Both'} dispatch={(val)=>updateSportStyle(val)}/>
+                    <ButtonPill currentValue={sportParams.playStyle} label={'Casual'} dispatch={(val) => updateSportStyle(val)} />
+                    <ButtonPill currentValue={sportParams.playStyle} label={'Competitive'} dispatch={(val) => updateSportStyle(val)} />
+                    <ButtonPill currentValue={sportParams.playStyle} label={'Both'} dispatch={(val) => updateSportStyle(val)} />
                 </View>
 
             </View> : null}
@@ -224,15 +267,15 @@ function SportPill(props) {
 //dispatch -> callback when button is clicked
 //label -> label and value
 function ButtonPill(props) {
-    const [toggled,setToggled] = useState(props.currentValue == props.label);
-    useEffect(()=>{
+    const [toggled, setToggled] = useState(props.currentValue == props.label);
+    useEffect(() => {
         setToggled(props.currentValue == props.label)
-    },[props.currentValue])
+    }, [props.currentValue])
     return (
-        <TouchableHighlight  
-        onPress={()=>{setToggled(!toggled);props.dispatch(props.label)}}
-        containerStyle={{ margin: 10, backgroundColor: toggled ?'#FF6B01' :'#E5E5E5', minWidth: 100, maxHeight: 60, padding: 10, borderRadius: 15, }}>
-            <Text style={{ margin: 10 ,color: toggled ?'white' :'black'}}>{props.label}</Text>
+        <TouchableHighlight
+            onPress={() => { setToggled(!toggled); props.dispatch(props.label) }}
+            containerStyle={{ margin: 10, backgroundColor: toggled ? '#FF6B01' : '#E5E5E5', minWidth: 100, maxHeight: 60, padding: 10, borderRadius: 15, }}>
+            <Text style={{ margin: 10, color: toggled ? 'white' : 'black' }}>{props.label}</Text>
         </TouchableHighlight>
     )
 
