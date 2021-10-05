@@ -23,6 +23,7 @@ import {
 import LoginScreen from './Screens/Login'
 import RegisterScreen from './Screens/Register';
 import SelectSports from './Screens/SelectSports';
+import SelectTime from './Screens/SelectTime';
 import auth from '@react-native-firebase/auth';
 auth().useEmulator('http://localhost:9099');
 
@@ -76,6 +77,11 @@ const App = () => {
           <OnBoardingStack.Screen
             name="SelectSports"
             component={SelectSports}
+            options={stackScreenOptions}
+          />
+           <OnBoardingStack.Screen
+            name="SelectTime"
+            component={SelectTime}
             options={stackScreenOptions}
           />
   

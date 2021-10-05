@@ -164,7 +164,7 @@ export default function SelectSports({ navigation }) {
                             />)
                     }}
                     keyExtractor={item => item.name}
-                    ListFooterComponent={<Footer submit={() => { dispatch({ type: 'SUBMIT', value: null }); navigation.navigate('Login') }} />}
+                    ListFooterComponent={<Footer submit={() => { dispatch({ type: 'SUBMIT', value: null }); navigation.navigate('SelectTime') }} />}
                 />
 
 
