@@ -14,24 +14,20 @@ import { TouchableHighlight } from 'react-native-gesture-handler';
 import database, { firebase } from '@react-native-firebase/database';
 import auth from '@react-native-firebase/auth';
 
+import OnboardingButton from '../Components/OnboardingButton';
+
 const devDB = firebase.app().database('http://localhost:9000/?ns=badmintonmatcher-4f217');
 
-function submit(selected_time) {
+function submit(selected_distance,navigation) {
     let currentUser = auth().currentUser;
-    let data = {}
-    Object.keys(selected_time).forEach((v) => {
-        let item = selected_time[v]
-        if (item == 1) {
-            data[v] = true
-        }
-
+    
+    console.log('SAVING result',selected_distance)
+    devDB.ref('/clients/' + currentUser.uid + '/preffered_match_distance/').set(selected_distance).then((result) => {
+        navigation.navigate('Main');
+       
+    }).catch((error)=>{
+        console.log("Error",error);
     })
-
-    devDB.ref('/clients/' + currentUser.uid + '/preffered_match_distance/').set(data).then((result) => {
-
-    })
-
-
 
 
 }
@@ -48,7 +44,7 @@ function reducer(state, action) {
             return { ...state, selected_distance: value }
 
         case 'SUBMIT':
-            submit(state.selected_distance)
+            submit(state.selected_distance,action.navigator)
             return state;
 
 
@@ -59,28 +55,19 @@ function reducer(state, action) {
 
 
 function Footer(props) {
-    return (
-        <View style={{ flex: 1, marginTop: 40, justifyContent: 'center', alignItems: 'center', maxHeight: 100, minWidth: '100%' }}>
-
-            <TouchableHighlight
-                style={[styles.registerButton]}
-                onPress={() => { props.submit(); }}
-            >
-                <Text style={styles.registerLabel}>Next</Text>
-            </TouchableHighlight>
-
-            <TouchableHighlight
-                style={[styles.registerButton]}
-                onPress={() => { props.skip(); }}
-            >
-                <Text style={styles.registerLabel}>Skip</Text>
-            </TouchableHighlight>
 
 
+    return (<OnboardingButton 
+                submitCallback = {()=>props.submit()}
+                skipCallback ={()=>props.skip()}
+                continueLabel ={'Next'}
+                skipLabel={'Skip'}
+                skippable={true}
+                continueStyle={styles.registerButton}
+                continueLabelStyle={styles.registerLabel}
+                skipLabelStyle={{...styles.registerLabel,color:'black'}}
+                skipStyle ={styles.skipButton}/>)
 
-        </View>
-
-    )
 }
 
 
@@ -93,7 +80,6 @@ export default function SelectDistance({ navigation }) {
             error: null,
         }
     );
-    console.log(formInputs);
     return (
         <View style={{ flex: 1, margin: 10, backgroundColor: '#E5E5E5', padding: 10, justifyContent: 'flex-start', width: '100%', height: '100%' }}>
             <Text style={{ flexWrap: 'wrap', padding: 21, marginTop: 10, color: '#282E3C', fontSize: 26, lineHeight: 46 }}>How far are you willing to travel for your game?</Text>
@@ -101,14 +87,13 @@ export default function SelectDistance({ navigation }) {
             <FlatList
                 data={distanceOptions}
                 renderItem={(item) => {
-                    console.log(formInputs.selected_distance, item.item)
                     return (
                         <Pill
                             item={item}
                             active={(item.item == formInputs.selected_distance)}
                             addTime={
                                 (val) => {
-                                    dispatch({ type: 'ADD_DISTANCE', value: val })
+                                    dispatch({ type: 'ADD_DISTANCE', value: val , navigator:navigation })
 
                                 }
                             }
@@ -137,9 +122,7 @@ export default function SelectDistance({ navigation }) {
 
 
 function Pill(props) {
-
     const [selected, setSelected] = useState(props.active);
-    console.log(selected);
     const selectPill = () => {
         props.addTime(props.item.item)
         setSelected(!selected);
@@ -218,6 +201,18 @@ const styles = StyleSheet.create({
         padding: 10,
         margin: 10
     },
+
+    skipButton: {
+        fontColor:'black',
+        height: 60,
+        width: 200,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 10,
+        margin: 10
+    },
+
 
     registerLabel: {
         fontStyle: 'normal',
