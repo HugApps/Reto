@@ -18,8 +18,6 @@ const devDB = firebase.app().database('http://localhost:9000/?ns=badmintonmatche
 
 function submit(selected_time) {
     let currentUser = auth().currentUser;
-
-    console.log('submited time', currentUser.uid);
     let data = {}
     Object.keys(selected_time).forEach((v) => {
         let item = selected_time[v]
@@ -29,7 +27,8 @@ function submit(selected_time) {
 
     })
 
-    devDB.ref('/clients/' + currentUser.uid + '/preffered_match_time/').set(data).then((result) => {
+    devDB.ref('/clients/' + currentUser.uid + '/preffered_match_distance/').set(data).then((result) => {
+
     })
 
 
@@ -43,23 +42,13 @@ function reducer(state, action) {
     let value = action.value
     switch (type) {
 
-        case 'ADD_TIME':
-            console.log('adding sport', value);
-            let old_list = { ...state.selected_time }
-            if (old_list[value.item]) {
-                let currentValue = old_list[value.item]
-                old_list[value.item] = currentValue == 1 ? 0 : 1;
-            } else {
-                old_list[value.item] = 1
-            }
-            return { ...state, selected_time: old_list }
-        case 'REMOVE_TIME':
-            let original_list = { ...state.selected_sports }
-            delete original_list[value.sport]
-            return { ...state, selected_sports: original_list }
+        case 'ADD_DISTANCE':
+            return { ...state, selected_distance: value }
+        case 'REMOVE_DISTANCE':
+            return { ...state, selected_distance: value }
 
         case 'SUBMIT':
-            submit(state.selected_time)
+            submit(state.selected_distance)
             return state;
 
 
@@ -96,92 +85,78 @@ function Footer(props) {
 
 
 
-export default function SelectTime({ navigation }) {
-    // We are just going to hardcode some sports for now, later on we will fetch from our db, once we find a easy way to seed it
-
-    // mornings : 10:00 to 12
-    //afternoon : 12 to like 5
-    //evenings: after 5
-    const [time, setTime] = useState(['Mornings', 'Afternoon', 'Evenings', 'Weekdays', 'Weekends', 'Flexible']);
+export default function SelectDistance({ navigation }) {
+    const distanceOptions = ['5km', '10km', '15km', '20km', 'flexible']
     const [formInputs, dispatch] = useReducer(reducer,
         {
-            selected_time: {},
+            selected_distance: null,
             error: null,
         }
     );
-    console.log(formInputs.selected_time);
-    if (time) {
+    console.log(formInputs);
+    return (
+        <View style={{ flex: 1, margin: 10, backgroundColor: '#E5E5E5', padding: 10, justifyContent: 'flex-start', width: '100%', height: '100%' }}>
+            <Text style={{ flexWrap: 'wrap', padding: 21, marginTop: 10, color: '#282E3C', fontSize: 26, lineHeight: 46 }}>How far are you willing to travel for your game?</Text>
 
-        return (
-            <View style={{ flex: 1, margin: 10, backgroundColor: '#E5E5E5', padding: 10, justifyContent: 'flex-start', width: '100%', height: '100%' }}>
-                <Text style={{ flexWrap: 'wrap', padding: 21, marginTop: 10, color: '#282E3C', fontSize: 26, lineHeight: 46 }}>When are you usually free to play?</Text>
+            <FlatList
+                data={distanceOptions}
+                renderItem={(item) => {
+                    console.log(formInputs.selected_distance, item.item)
+                    return (
+                        <Pill
+                            item={item}
+                            active={(item.item == formInputs.selected_distance)}
+                            addTime={
+                                (val) => {
+                                    dispatch({ type: 'ADD_DISTANCE', value: val })
 
-                <FlatList
-                    data={[...time]}
-                    renderItem={(item) => {
-                        return (
-                            <Pill
-                                item={item}
-
-                                addTime={
-                                    (val) => {
-                                        dispatch({ type: 'ADD_TIME', value: val })
-
-                                    }
-                                }
-                            />)
-                    }}
-                    keyExtractor={item => item.name}
-                    ListFooterComponent={
-                        <Footer
-                            submit={
-                                () => {
-                                    dispatch({ type: 'SUBMIT', value: null });
-                                    navigation.navigate('SelectDistance')
                                 }
                             }
-                            skip={() => { navigation.navigate('SelectDistance') }}/>
-
+                        />)
+                }}
+                keyExtractor={item => item.name}
+                ListFooterComponent={
+                    <Footer
+                        submit={
+                            () => {
+                                dispatch({ type: 'SUBMIT', value: null });
+                                //.navigate('SelectDistance')
+                            }
                         }
-                />
+                        skip={() => { console.log('TBD') }} />
+
+                }
+            />
 
 
-            </View>
+        </View>
 
-        )
-
-    } else {
-        return null;
-    }
-
+    )
 
 }
 
 
 function Pill(props) {
 
-    const [selected, setSelected] = useState(false);
+    const [selected, setSelected] = useState(props.active);
+    console.log(selected);
     const selectPill = () => {
-        props.addTime(props.item)
+        props.addTime(props.item.item)
         setSelected(!selected);
     }
+
+    useEffect(() => {
+        setSelected(props.active);
+
+    },[props.active])
 
     return (
         <View>
             <TouchableHighlight onPress={() => { selectPill(); }} style={{ flex: 1, margin: 10, marginBottom: 10, padding: 20, borderRadius: 15, maxHeight: 80, backgroundColor: 'white', flexDirection: 'row' }}>
                 <Text style={{ textTransform: 'capitalize', color: selected ? '#FF6B01' : '#282E3C' }}>{props.item.item}</Text>
             </TouchableHighlight>
-
-
-
         </View>
-
-
-
     )
-
-
-
 }
 
 

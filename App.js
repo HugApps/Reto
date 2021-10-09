@@ -8,7 +8,7 @@
 import 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import React ,{ useEffect, useReducer,useState }from 'react';
+import React, { useEffect, useReducer, useState } from 'react';
 
 import {
   SafeAreaView,
@@ -24,7 +24,9 @@ import LoginScreen from './Screens/Login'
 import RegisterScreen from './Screens/Register';
 import SelectSports from './Screens/SelectSports';
 import SelectTime from './Screens/SelectTime';
+import SelectDistance from './Screens/SelectDistance';
 import auth from '@react-native-firebase/auth';
+
 auth().useEmulator('http://localhost:9099');
 
 import database, { firebase } from '@react-native-firebase/database';
@@ -35,21 +37,21 @@ const devDB = firebase.app().database('http://localhost:9000/?ns=badmintonmatche
 
 const AuthenticationStack = createStackNavigator();
 const OnBoardingStack = createStackNavigator();
-const stackScreenOptions =  { headerShown:false,title: null}
+const stackScreenOptions = { headerShown: false, title: null }
 const App = () => {
   const [user, setUser] = useState();
 
   // Handle user state changes
   function onAuthStateChanged(user) {
     setUser(user);
-  
+
   }
 
   useEffect(() => {
     const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
     return subscriber; // unsubscribe on unmount
   }, []);
-  if(!user){
+  if (!user) {
 
     return (
       <NavigationContainer>
@@ -59,19 +61,19 @@ const App = () => {
             component={LoginScreen}
             options={stackScreenOptions}
           />
-  
+
           <AuthenticationStack.Screen
             name="Register"
             component={RegisterScreen}
             options={stackScreenOptions}
           />
-            
+
         </AuthenticationStack.Navigator>
       </NavigationContainer>
     );
 
   } else {
-    return(
+    return (
       <NavigationContainer>
         <OnBoardingStack.Navigator>
           <OnBoardingStack.Screen
@@ -79,14 +81,20 @@ const App = () => {
             component={SelectSports}
             options={stackScreenOptions}
           />
-           <OnBoardingStack.Screen
+          <OnBoardingStack.Screen
             name="SelectTime"
             component={SelectTime}
             options={stackScreenOptions}
           />
-  
 
-            
+          <OnBoardingStack.Screen
+            name="SelectDistance"
+            component={SelectDistance}
+            options={stackScreenOptions}
+          />
+
+
+
         </OnBoardingStack.Navigator>
       </NavigationContainer>
 

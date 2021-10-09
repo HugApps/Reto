@@ -84,7 +84,7 @@ function Footer(props) {
                 style={[styles.registerButton]}
                 onPress={() => { props.submit(); }}
             >
-                <Text style={styles.registerLabel}>Register</Text>
+                <Text style={styles.registerLabel}>Next</Text>
             </TouchableHighlight>
 
 
