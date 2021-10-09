@@ -12,24 +12,23 @@ import {
 // @refresh reset
 import { TouchableHighlight } from 'react-native-gesture-handler';
 import database, { firebase } from '@react-native-firebase/database';
+import OnboardingButtons from '../Components/OnboardingButton'
 import auth from '@react-native-firebase/auth';
 
 const devDB = firebase.app().database('http://localhost:9000/?ns=badmintonmatcher-4f217');
 
-function submit(selected_sports){
+function submit(selected_sports,navigation) {
     let currentUser = auth().currentUser;
+    let data = {}
+    Object.keys(selected_sports).forEach((v) => {
+        let item = selected_sports[v]
 
-    console.log('submited sports',currentUser.uid);
-    let data ={}
-     Object.keys(selected_sports).forEach((v)=>{
-         let item = selected_sports[v]
-
-         data[v] = {sport:v,experience:item.level,mode:item.playStyle}
+        data[v] = { sport: v, experience: item.level, mode: item.playStyle }
 
 
     })
 
-    devDB.ref('/clients/' + currentUser.uid + '/player_sports/').set(data).then((result) => {
+    devDB.ref('/clients/' + currentUser.uid + '/player_sports/').set(data).then((result) => { navigation.navigate('SelectTime')
     })
 
 
@@ -44,7 +43,6 @@ function reducer(state, action) {
     switch (type) {
 
         case 'ADD_SPORT':
-            console.log('adding sport');
             let old_list = { ...state.selected_sports }
             old_list[value.sport] = { ...value }
             return { ...state, selected_sports: old_list }
@@ -54,7 +52,16 @@ function reducer(state, action) {
             return { ...state, selected_sports: original_list }
 
         case 'SUBMIT':
-            submit(state.selected_sports)
+            console.log(state.selected_sports);
+            if(state.selected_sports) {
+                console.log('ALLOW to continue',state.selected_sports);
+                submit(state.selected_sports,action.navigation)
+                
+            } else {
+                console.log('cant continue');
+                //Alert must select a sport
+               
+            }
             return state;
 
 
@@ -77,19 +84,14 @@ const mock_sports = {
 
 
 function Footer(props) {
+
     return (
-        <View style={{ flex: 1, marginTop: 40, justifyContent: 'center', alignItems: 'center', maxHeight: 100, minWidth: '100%' }}>
-
-            <TouchableHighlight
-                style={[styles.registerButton]}
-                onPress={() => { props.submit(); }}
-            >
-                <Text style={styles.registerLabel}>Next</Text>
-            </TouchableHighlight>
-
-
-        </View>
-
+        <OnboardingButtons
+            skippable={false}
+            submitCallback={() => props.submit()}
+            continueLabel={'Next'}
+            continueStyle={styles.registerButton}
+            continueLabelStyle={styles.registerLabel} />
     )
 }
 
@@ -103,7 +105,7 @@ export default function SelectSports({ navigation }) {
     const [sports, setSports] = useState();
     const [formInputs, dispatch] = useReducer(reducer,
         {
-            selected_sports: {},
+            selected_sports: null,
             error: null,
         }
     );
@@ -111,8 +113,8 @@ export default function SelectSports({ navigation }) {
     // use this for now to seed sports table
     useEffect(() => {
         devDB.ref('/sports').set(mock_sports).then((result) => {
-            if(result){
-               
+            if (result) {
+
             }
         })
 
@@ -164,7 +166,7 @@ export default function SelectSports({ navigation }) {
                             />)
                     }}
                     keyExtractor={item => item.name}
-                    ListFooterComponent={<Footer submit={() => { dispatch({ type: 'SUBMIT', value: null }); navigation.navigate('SelectTime') }} />}
+                    ListFooterComponent={<Footer submit={() => { dispatch({ type: 'SUBMIT', value: null  , navigation:navigation}); }} />}
                 />
 
 
@@ -208,7 +210,6 @@ function SportPill(props) {
 
     const toggleExpand = () => {
         if (selected) {
-            console.log('removeSport');
             props.removeSport(sportParams)
         } else {
             props.addSport(sportParams);

@@ -13,13 +13,13 @@ import {
 import { TouchableHighlight } from 'react-native-gesture-handler';
 import database, { firebase } from '@react-native-firebase/database';
 import auth from '@react-native-firebase/auth';
+import OnboardingButton from '../Components/OnboardingButton';
 
 const devDB = firebase.app().database('http://localhost:9000/?ns=badmintonmatcher-4f217');
 
-function submit(selected_time) {
+function submit(selected_time,navigation) {
     let currentUser = auth().currentUser;
 
-    console.log('submited time', currentUser.uid);
     let data = {}
     Object.keys(selected_time).forEach((v) => {
         let item = selected_time[v]
@@ -30,6 +30,8 @@ function submit(selected_time) {
     })
 
     devDB.ref('/clients/' + currentUser.uid + '/preffered_match_time/').set(data).then((result) => {
+        navigation.navigate('SelectDistance')
+
     })
 
 
@@ -44,7 +46,6 @@ function reducer(state, action) {
     switch (type) {
 
         case 'ADD_TIME':
-            console.log('adding sport', value);
             let old_list = { ...state.selected_time }
             if (old_list[value.item]) {
                 let currentValue = old_list[value.item]
@@ -59,7 +60,7 @@ function reducer(state, action) {
             return { ...state, selected_sports: original_list }
 
         case 'SUBMIT':
-            submit(state.selected_time)
+            submit(state.selected_time,action.navigation)
             return state;
 
 
@@ -68,32 +69,21 @@ function reducer(state, action) {
 
 }
 
-
 function Footer(props) {
-    return (
-        <View style={{ flex: 1, marginTop: 40, justifyContent: 'center', alignItems: 'center', maxHeight: 100, minWidth: '100%' }}>
-
-            <TouchableHighlight
-                style={[styles.registerButton]}
-                onPress={() => { props.submit(); }}
-            >
-                <Text style={styles.registerLabel}>Next</Text>
-            </TouchableHighlight>
-
-            <TouchableHighlight
-                style={[styles.registerButton]}
-                onPress={() => { props.skip(); }}
-            >
-                <Text style={styles.registerLabel}>Skip</Text>
-            </TouchableHighlight>
 
 
+    return (<OnboardingButton 
+                submitCallback = {()=>props.submit()}
+                skipCallback ={()=>props.skip()}
+                continueLabel ={'Next'}
+                skipLabel={'Skip'}
+                skippable={true}
+                continueStyle={styles.registerButton}
+                continueLabelStyle={styles.registerLabel}
+                skipLabelStyle={{...styles.registerLabel,color:'black'}}
+                skipStyle ={styles.skipButton}/>)
 
-        </View>
-
-    )
 }
-
 
 
 export default function SelectTime({ navigation }) {
@@ -109,7 +99,6 @@ export default function SelectTime({ navigation }) {
             error: null,
         }
     );
-    console.log(formInputs.selected_time);
     if (time) {
 
         return (
@@ -136,8 +125,7 @@ export default function SelectTime({ navigation }) {
                         <Footer
                             submit={
                                 () => {
-                                    dispatch({ type: 'SUBMIT', value: null });
-                                    navigation.navigate('SelectDistance')
+                                    dispatch({ type: 'SUBMIT', value: null ,navigation:navigation});
                                 }
                             }
                             skip={() => { navigation.navigate('SelectDistance') }}/>
@@ -238,6 +226,16 @@ const styles = StyleSheet.create({
         width: 200,
         borderRadius: 20,
         backgroundColor: '#FF6B01',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 10,
+        margin: 10
+    },
+
+    skipButton: {
+        height: 60,
+        width: 200,
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 10,
