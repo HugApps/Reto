@@ -144,10 +144,6 @@ function reducer(state, action) {
 
 
 
-
-
-
-
 function ErrorBox(props){
 
     return(
@@ -183,25 +179,52 @@ export default function Register({ navigation }) {
     
         let currentYear = moment().year();
         let userYear = moment(DOB).year();
-        console.log(currentYear,userYear);
         let age = currentYear - userYear;
+        if (!full_name || full_name.length == 0) {
+            dispatch({ type: 'SET_ERROR', value: 'You must be over 18 to register for Reto' })
+            return;
+        }
         
         if(age < 18) {
             dispatch({ type: 'SET_ERROR', value: 'You must be over 18 to register for Reto' })
             return;
         }
+
         if (email && password) {
     
             auth().createUserWithEmailAndPassword(email, password).then((user) => {
+               
                 if (user) {
+       
                     //Create user in db
-                    console.log(user);
-                    devDB.ref('/clients/' + user.user.uid).set({ full_name, email, DOB ,age }).then((result) => {
-    
+ 
+                    devDB.ref('/clients/' + user.user.uid).set({ full_name, email, DOB ,age, authenticated:false }).then((result) => {
+
+
+                        var actionCodeSettings = {
+                            url: 'https://www.example.com/cart?email=user@example.com&cartId=123',
+                            iOS: {
+                              bundleId: 'com.example.ios'
+                            },
+                            /*android: {
+                              packageName: 'com.example.android',
+                              installApp: true,
+                              minimumVersion: '12'
+                            },*/
+                            handleCodeInApp: true
+                          };
+
+
+
+
+                        firebase.auth().currentUser.sendEmailVerification();
+                        console.log(navigation);
+                        navigation.navigate('Verify')
                     })
                     .catch((dbErrors)=>{
 
                         const user = firebase.auth().currentUser;
+                        console.log('validation errors!',dbErrors);
                         dispatch({ type: 'SET_ERROR', value:'Server error, please try again' })
                         user.delete().then((result)=>{
                             if(result){
@@ -225,6 +248,10 @@ export default function Register({ navigation }) {
 
             })
     
+        } else {
+            dispatch({ type: 'SET_ERROR', value: 'Missing email and password' })
+            return;
+
         }
     
     
@@ -290,7 +317,7 @@ export default function Register({ navigation }) {
                             validator={validateDateOfBirth}
                             placeHolder={'Date of birth(YYYY-MM-DD)'}
                             errorCallBack={(msg) => { dispatch({ type: 'SET_ERROR', value: msg }) }}
-                            callback={(value) => { dispatch({ type: 'SET_DATE_OF_BIRTH', value: value }) }}
+                            callback={(value) => { dispatch({ type: 'SET_DATE_OF_BIRTH', value: value}) }}
                         />
 
                         <FormInput
@@ -319,8 +346,6 @@ export default function Register({ navigation }) {
                                 >
                                     <Text style={styles.registerLabel}>Register</Text>
                                 </TouchableHighlight>}
-
-
 
                         </View>
 

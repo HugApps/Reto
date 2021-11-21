@@ -33,10 +33,6 @@ function submit(selected_time,navigation) {
         navigation.navigate('SelectDistance')
 
     })
-
-
-
-
 }
 
 function reducer(state, action) {
@@ -71,7 +67,6 @@ function reducer(state, action) {
 
 function Footer(props) {
 
-
     return (<OnboardingButton 
                 submitCallback = {()=>props.submit()}
                 skipCallback ={()=>props.skip()}
@@ -88,7 +83,6 @@ function Footer(props) {
 
 export default function SelectTime({ navigation }) {
     // We are just going to hardcode some sports for now, later on we will fetch from our db, once we find a easy way to seed it
-
     // mornings : 10:00 to 12
     //afternoon : 12 to like 5
     //evenings: after 5

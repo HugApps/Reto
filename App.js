@@ -22,12 +22,16 @@ import {
 
 import LoginScreen from './Screens/Login'
 import RegisterScreen from './Screens/Register';
+import VerifyScreen from './Screens/VerifyScreen';
 import SelectSports from './Screens/SelectSports';
 import SelectTime from './Screens/SelectTime';
 import SelectDistance from './Screens/SelectDistance';
+import Introduction from './Screens/Onboarding/Introduction';
 import auth from '@react-native-firebase/auth';
 
+
 auth().useEmulator('http://localhost:9099');
+
 
 import database, { firebase } from '@react-native-firebase/database';
 
@@ -40,10 +44,19 @@ const OnBoardingStack = createStackNavigator();
 const stackScreenOptions = { headerShown: false, title: null }
 const App = () => {
   const [user, setUser] = useState();
+  const [onboarded, setOnboarding] = useState(false)
+
 
   // Handle user state changes
   function onAuthStateChanged(user) {
-    setUser(user);
+    if (user) {
+      user.reload();
+      setUser(user);
+      console.log('debug email verication',user.emailVerified);
+    }
+
+
+
 
   }
 
@@ -51,31 +64,18 @@ const App = () => {
     const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
     return subscriber; // unsubscribe on unmount
   }, []);
-  if (!user) {
 
-    return (
-      <NavigationContainer>
-        <AuthenticationStack.Navigator>
-          <AuthenticationStack.Screen
-            name="Login"
-            component={LoginScreen}
-            options={stackScreenOptions}
-          />
 
-          <AuthenticationStack.Screen
-            name="Register"
-            component={RegisterScreen}
-            options={stackScreenOptions}
-          />
 
-        </AuthenticationStack.Navigator>
-      </NavigationContainer>
-    );
-
-  } else {
+  if (user && user.emailVerified && onboarded == false) {
     return (
       <NavigationContainer>
         <OnBoardingStack.Navigator>
+          <OnBoardingStack.Screen
+            name="Introduction"
+            component={Introduction}
+            options={stackScreenOptions}
+          />
           <OnBoardingStack.Screen
             name="SelectSports"
             component={SelectSports}
@@ -93,14 +93,62 @@ const App = () => {
             options={stackScreenOptions}
           />
 
-
-
         </OnBoardingStack.Navigator>
       </NavigationContainer>
 
 
     );
+
+  } else if (user && !user.emailVerified) {
+    return (
+      <NavigationContainer >
+        <AuthenticationStack.Navigator initialRouteName={'Verify'}>
+
+          <AuthenticationStack.Screen
+            name="Verify"
+            component={VerifyScreen}
+            options={stackScreenOptions}
+          />
+
+          <AuthenticationStack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={stackScreenOptions}
+          />
+
+          <AuthenticationStack.Screen
+            name="Register"
+            component={RegisterScreen}
+            options={stackScreenOptions}
+          />
+
+
+        </AuthenticationStack.Navigator>
+      </NavigationContainer>
+
+    )
+  } else {
+    return (
+      <NavigationContainer >
+        <AuthenticationStack.Navigator initialRouteName={'RegisterScreen'}>
+          <AuthenticationStack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={stackScreenOptions}
+          />
+
+          <AuthenticationStack.Screen
+            name="Register"
+            component={RegisterScreen}
+            options={stackScreenOptions}
+          />
+
+
+        </AuthenticationStack.Navigator>
+      </NavigationContainer>
+    )
   }
+
 
 };
 
